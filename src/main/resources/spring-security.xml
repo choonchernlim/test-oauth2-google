@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <security:http pattern="/resources/**" security="none"/>
+
+    <security:http use-expressions="true" entry-point-ref="clientAuthenticationEntryPoint">
+        <security:http-basic/>
+        <security:logout/>
+        <security:anonymous enabled="false"/>
+
+        <security:intercept-url pattern="/**" access="isFullyAuthenticated()"/>
+
+        <!-- This is the crucial part and the wiring is very important -->
+        <!--
+            The order in which these filters execute are very important. oauth2ClientContextFilter must be invoked before
+            oAuth2AuthenticationProcessingFilter, that's because when a redirect to Google is required, oAuth2AuthenticationProcessingFilter
+            throws a UserRedirectException which the oauth2ClientContextFilter handles and generates a redirect request to Google.
+            Subsequently the response from Google is handled by the oAuth2AuthenticationProcessingFilter to populate the
+            Authentication object and stored in the SecurityContext
+        -->
+        <security:custom-filter ref="oauth2ClientContextFilter" after="EXCEPTION_TRANSLATION_FILTER"/>
+        <security:custom-filter ref="oAuth2AuthenticationProcessingFilter" before="FILTER_SECURITY_INTERCEPTOR"/>
+    </security:http>
+
+    <bean id="oAuth2AuthenticationProcessingFilter"
+          class="org.springframework.security.oauth2.client.filter.OAuth2ClientAuthenticationProcessingFilter">
+        <constructor-arg name="defaultFilterProcessesUrl" value="${google.redirect.uri}"/>
+        <property name="restTemplate" ref="googleRestTemplate"/>
+        <property name="tokenServices" ref="tokenServices"/>
+    </bean>
+
+    <!--
+        These token classes are mostly a clone of the Spring classes but have the structure modified so that the response
+        from Google can be handled.
+    -->
+    <bean id="tokenServices" class="com.github.choonchernlim.testoauth2google.security.GoogleTokenServices">
+        <property name="checkTokenEndpointUrl" value="${google.check.token.endpoint.url}"/>
+        <property name="clientId" value="${google.client.id}"/>
+        <property name="clientSecret" value="${google.client.secret}"/>
+        <property name="accessTokenConverter">
+            <bean class="com.github.choonchernlim.testoauth2google.security.GoogleAccessTokenConverter">
+                <property name="userTokenConverter">
+                    <bean class="com.github.choonchernlim.testoauth2google.security.DefaultUserAuthenticationConverter"/>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
+    <!--
+        This authentication entry point is used for all the unauthenticated or unauthorised sessions to be directed to the
+        /googleLogin URL which is then intercepted by the oAuth2AuthenticationProcessingFilter to trigger authentication from
+        Google.
+    -->
+    <bean id="clientAuthenticationEntryPoint"
+          class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+        <constructor-arg value="${google.redirect.uri}"/>
+    </bean>
+
+    <security:authentication-manager/>
+</beans>
