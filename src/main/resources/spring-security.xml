@@ -28,13 +28,14 @@
     <bean id="oAuth2AuthenticationProcessingFilter"
           class="org.springframework.security.oauth2.client.filter.OAuth2ClientAuthenticationProcessingFilter">
         <constructor-arg name="defaultFilterProcessesUrl" value="${google.redirect.uri}"/>
-        <property name="restTemplate" ref="googleRestTemplate"/>
+        <property name="restTemplate" ref="oauth2RestTemplate"/>
         <property name="tokenServices" ref="tokenServices"/>
     </bean>
 
 
     <bean id="userDetailsService"
           class="com.github.choonchernlim.testoauth2google.security.CustomUserDetailsService">
+        <!--<property name="oauth2RestTemplate" ref="oauth2RestTemplate"/>-->
     </bean>
 
     <bean id="userAuthenticationConverter"
@@ -66,5 +67,5 @@
         <constructor-arg value="${google.redirect.uri}"/>
     </bean>
 
-    <security:authentication-manager/>
+    <!--<security:authentication-manager/>-->
 </beans>

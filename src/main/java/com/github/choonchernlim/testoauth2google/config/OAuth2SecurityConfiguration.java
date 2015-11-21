@@ -32,6 +32,7 @@ class OAuth2SecurityConfiguration {
     @Qualifier("accessTokenRequest")
     private AccessTokenRequest accessTokenRequest;
 
+    // TODO LIMC had to disable scope session to allow userdetailservice to use oauthtemplate
     @Bean
     @Scope("session")
     public OAuth2ProtectedResourceDetails googleResource() {
@@ -57,9 +58,10 @@ class OAuth2SecurityConfiguration {
         return scopes;
     }
 
+    // TODO LIMC had to disable scope session to allow userdetailservice to use oauthtemplate
     @Bean
     @Scope(value = "session", proxyMode = ScopedProxyMode.INTERFACES)
-    public OAuth2RestTemplate googleRestTemplate() {
+    public OAuth2RestTemplate oauth2RestTemplate() {
         return new OAuth2RestTemplate(googleResource(), new DefaultOAuth2ClientContext(accessTokenRequest));
     }
 }

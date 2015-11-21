@@ -1,22 +1,45 @@
 package com.github.choonchernlim.testoauth2google.security;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class GoogleProfile {
-    private String id;
-    private String email;
+    protected String id;
+    protected String email;
     @JsonProperty("verified_email")
-    private Boolean verifiedEmail;
-    private String name;
+    protected Boolean verifiedEmail;
+    protected String name;
     @JsonProperty("given_name")
-    private String givenName;
+    protected String givenName;
     @JsonProperty("family_name")
-    private String familyName;
-    private String link;
-    private String picture;
-    private String gender;
-    private String locale;
-    private String hd;
+    protected String familyName;
+    protected String link;
+    protected String picture;
+    protected String gender;
+    protected String locale;
+    protected String hd;
+
+    public GoogleProfile() {
+    }
+
+    public GoogleProfile(GoogleProfile googleProfile) {
+        this.id = googleProfile.id;
+        this.email = googleProfile.email;
+        this.verifiedEmail = googleProfile.verifiedEmail;
+        this.name = googleProfile.name;
+        this.givenName = googleProfile.givenName;
+        this.familyName = googleProfile.familyName;
+        this.link = googleProfile.link;
+        this.picture = googleProfile.picture;
+        this.gender = googleProfile.gender;
+        this.locale = googleProfile.locale;
+        this.hd = googleProfile.hd;
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
+    }
 
     public String getId() {
         return id;
