@@ -1,6 +1,6 @@
 package com.github.choonchernlim.testoauth2google.controller;
 
-import com.github.choonchernlim.testoauth2google.security.CustomUserDetails;
+import com.github.choonchernlim.testoauth2google.security.GoogleUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -35,7 +35,7 @@ public final class IndexController {
 //        final GoogleProfile googleProfile = forEntity.getBody();
 
 
-        final CustomUserDetails principal = (CustomUserDetails) authentication.getPrincipal();
+        final GoogleUserDetails principal = (GoogleUserDetails) authentication.getPrincipal();
 
         model.addAttribute("profile", principal);
 

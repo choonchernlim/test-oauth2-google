@@ -15,11 +15,13 @@ package com.github.choonchernlim.testoauth2google.security;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.OAuth2Request;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.UserAuthenticationConverter;
+import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,27 +33,17 @@ import java.util.Set;
 /**
  * Copied the DefaultAccessTokenConverter and modified for Google token details.
  */
+@Service
 public class GoogleAccessTokenConverter extends DefaultAccessTokenConverter {
-
     private static Logger LOGGER = LoggerFactory.getLogger(GoogleAccessTokenConverter.class);
+    private final UserAuthenticationConverter userTokenConverter;
 
-    private UserAuthenticationConverter userTokenConverter;
-
-    public GoogleAccessTokenConverter() {
-        setUserTokenConverter(new CustomDefaultUserAuthenticationConverter());
-    }
-
-    /**
-     * Converter for the part of the data in the token representing a user.
-     *
-     * @param userTokenConverter the userTokenConverter to set
-     */
-    public final void setUserTokenConverter(UserAuthenticationConverter userTokenConverter) {
+    @Autowired
+    public GoogleAccessTokenConverter(final UserAuthenticationConverter userTokenConverter) {
         this.userTokenConverter = userTokenConverter;
-        super.setUserTokenConverter(userTokenConverter);
     }
 
-    public OAuth2Authentication extractAuthentication(Map<String, ?> map) {
+    public OAuth2Authentication extractAuthentication(final Map<String, ?> map) {
         LOGGER.debug("Map: {}", map);
 
         Map<String, String> parameters = new HashMap<String, String>();
@@ -74,7 +66,7 @@ public class GoogleAccessTokenConverter extends DefaultAccessTokenConverter {
         return new OAuth2Authentication(request, user);
     }
 
-    private Set<String> parseScopes(Map<String, ?> map) {
+    private Set<String> parseScopes(final Map<String, ?> map) {
         // Parsing of scopes coming back from Google are slightly different from the default implementation
         // Instead of it being a collection it is a String where multiple scopes are separated by a space.
         Object scopeAsObject = map.containsKey(SCOPE) ? map.get(SCOPE) : EMPTY;

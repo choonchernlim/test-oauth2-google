@@ -5,11 +5,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
-public class CustomUserDetails extends GoogleProfile implements UserDetails {
+public class GoogleUserDetails extends GoogleProfile implements UserDetails {
 
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public CustomUserDetails(GoogleProfile googleProfile, Collection<? extends GrantedAuthority> authorities) {
+    public GoogleUserDetails(final GoogleProfile googleProfile,
+                             final Collection<? extends GrantedAuthority> authorities) {
         super(googleProfile);
         this.authorities = authorities;
     }

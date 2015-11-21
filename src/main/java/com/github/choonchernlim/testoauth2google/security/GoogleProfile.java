@@ -20,6 +20,8 @@ public class GoogleProfile {
     protected String locale;
     protected String hd;
 
+    // default constructor for Jackson to create JSON object
+    @SuppressWarnings("unused")
     public GoogleProfile() {
     }
 

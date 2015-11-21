@@ -14,6 +14,8 @@ package com.github.choonchernlim.testoauth2google.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -26,6 +28,7 @@ import org.springframework.security.oauth2.common.exceptions.InvalidTokenExcepti
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.RemoteTokenServices;
+import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -40,22 +43,28 @@ import java.util.Map;
 /**
  * Copied the RemoteTokenServices and modified for Google token details.
  */
+@Service
 public class GoogleTokenServices extends RemoteTokenServices {
 
     private static Logger LOGGER = LoggerFactory.getLogger(GoogleTokenServices.class);
 
-    private RestOperations restTemplate;
+    private final String checkTokenEndpointUrl;
+    private final String clientId;
+    private final String clientSecret;
+    private final AccessTokenConverter tokenConverter;
+    private final RestOperations restTemplate;
 
-    private String checkTokenEndpointUrl;
+    @Autowired
+    public GoogleTokenServices(@Value("${google.check.token.endpoint.url}") final String checkTokenEndpointUrl,
+                               @Value("${google.client.id}") final String clientId,
+                               @Value("${google.client.secret}") final String clientSecret,
+                               final AccessTokenConverter tokenConverter) {
+        this.checkTokenEndpointUrl = checkTokenEndpointUrl;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+        this.tokenConverter = tokenConverter;
 
-    private String clientId;
-
-    private String clientSecret;
-
-    private AccessTokenConverter tokenConverter = new GoogleAccessTokenConverter();
-
-    public GoogleTokenServices() {
-        restTemplate = new RestTemplate();
+        this.restTemplate = new RestTemplate();
         ((RestTemplate) restTemplate).setErrorHandler(new DefaultResponseErrorHandler() {
             @Override
             // Ignore 400
@@ -67,28 +76,8 @@ public class GoogleTokenServices extends RemoteTokenServices {
         });
     }
 
-    public void setRestTemplate(RestOperations restTemplate) {
-        this.restTemplate = restTemplate;
-    }
-
-    public void setCheckTokenEndpointUrl(String checkTokenEndpointUrl) {
-        this.checkTokenEndpointUrl = checkTokenEndpointUrl;
-    }
-
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
-    public void setClientSecret(String clientSecret) {
-        this.clientSecret = clientSecret;
-    }
-
-    public void setAccessTokenConverter(AccessTokenConverter accessTokenConverter) {
-        this.tokenConverter = accessTokenConverter;
-    }
-
     @Override
-    public OAuth2Authentication loadAuthentication(String accessToken) throws AuthenticationException, InvalidTokenException {
+    public OAuth2Authentication loadAuthentication(final String accessToken) throws AuthenticationException, InvalidTokenException {
         LOGGER.debug("Access token: {}", accessToken);
 
         Map<String, Object> checkTokenResponse = checkToken(accessToken);
@@ -105,7 +94,7 @@ public class GoogleTokenServices extends RemoteTokenServices {
         return tokenConverter.extractAuthentication(checkTokenResponse);
     }
 
-    private Map<String, Object> checkToken(String accessToken) {
+    private Map<String, Object> checkToken(final String accessToken) {
         LOGGER.debug("Access token: {}", accessToken);
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<String, String>();
@@ -116,14 +105,14 @@ public class GoogleTokenServices extends RemoteTokenServices {
         return postForMap(accessTokenUrl, formData, headers);
     }
 
-    private void transformNonStandardValuesToStandardValues(Map<String, Object> map) {
+    private void transformNonStandardValuesToStandardValues(final Map<String, Object> map) {
         LOGGER.debug("Original map = " + map);
         map.put("client_id", map.get("issued_to")); // Google sends 'client_id' as 'issued_to'
         map.put("user_name", map.get("user_id")); // Google sends 'user_name' as 'user_id'
         LOGGER.debug("Transformed = " + map);
     }
 
-    private String getAuthorizationHeader(String clientId, String clientSecret) {
+    private String getAuthorizationHeader(final String clientId, final String clientSecret) {
         LOGGER.debug("clientId: {}", clientId);
         LOGGER.debug("clientSecret: {}", clientSecret);
 
@@ -136,7 +125,9 @@ public class GoogleTokenServices extends RemoteTokenServices {
         }
     }
 
-    private Map<String, Object> postForMap(String path, MultiValueMap<String, String> formData, HttpHeaders headers) {
+    private Map<String, Object> postForMap(final String path,
+                                           final MultiValueMap<String, String> formData,
+                                           final HttpHeaders headers) {
         LOGGER.debug("path: {}", path);
         LOGGER.debug("formData: {}", formData);
         LOGGER.debug("headers: {}", headers);

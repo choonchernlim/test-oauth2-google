@@ -29,32 +29,7 @@
           class="org.springframework.security.oauth2.client.filter.OAuth2ClientAuthenticationProcessingFilter">
         <constructor-arg name="defaultFilterProcessesUrl" value="${google.redirect.uri}"/>
         <property name="restTemplate" ref="oauth2RestTemplate"/>
-        <property name="tokenServices" ref="tokenServices"/>
-    </bean>
-
-
-    <bean id="userDetailsService"
-          class="com.github.choonchernlim.testoauth2google.security.CustomUserDetailsService">
-        <!--<property name="oauth2RestTemplate" ref="oauth2RestTemplate"/>-->
-    </bean>
-
-    <bean id="userAuthenticationConverter"
-          class="com.github.choonchernlim.testoauth2google.security.CustomDefaultUserAuthenticationConverter">
-        <property name="userDetailsService" ref="userDetailsService"/>
-    </bean>
-    <!--
-        These token classes are mostly a clone of the Spring classes but have the structure modified so that the response
-        from Google can be handled.
-    -->
-    <bean id="tokenServices" class="com.github.choonchernlim.testoauth2google.security.GoogleTokenServices">
-        <property name="checkTokenEndpointUrl" value="${google.check.token.endpoint.url}"/>
-        <property name="clientId" value="${google.client.id}"/>
-        <property name="clientSecret" value="${google.client.secret}"/>
-        <property name="accessTokenConverter">
-            <bean class="com.github.choonchernlim.testoauth2google.security.GoogleAccessTokenConverter">
-                <property name="userTokenConverter" ref="userAuthenticationConverter"/>
-            </bean>
-        </property>
+        <property name="tokenServices" ref="googleTokenServices"/>
     </bean>
 
     <!--
@@ -66,6 +41,4 @@
           class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
         <constructor-arg value="${google.redirect.uri}"/>
     </bean>
-
-    <!--<security:authentication-manager/>-->
 </beans>
