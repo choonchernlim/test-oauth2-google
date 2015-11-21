@@ -11,7 +11,7 @@
         </layout>
     </appender>
 
-    <logger name="testOAuth2Google">
+    <logger name="com.github.choonchernlim.testoauth2google">
         <level value="debug"/>
     </logger>
 

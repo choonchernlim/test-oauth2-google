@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns="http://www.springframework.org/schema/beans"
        xmlns:security="http://www.springframework.org/schema/security"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
 
     <security:http pattern="/resources/**" security="none"/>
@@ -32,6 +32,15 @@
         <property name="tokenServices" ref="tokenServices"/>
     </bean>
 
+
+    <bean id="userDetailsService"
+          class="com.github.choonchernlim.testoauth2google.security.CustomUserDetailsService">
+    </bean>
+
+    <bean id="userAuthenticationConverter"
+          class="com.github.choonchernlim.testoauth2google.security.CustomDefaultUserAuthenticationConverter">
+        <property name="userDetailsService" ref="userDetailsService"/>
+    </bean>
     <!--
         These token classes are mostly a clone of the Spring classes but have the structure modified so that the response
         from Google can be handled.
@@ -42,9 +51,7 @@
         <property name="clientSecret" value="${google.client.secret}"/>
         <property name="accessTokenConverter">
             <bean class="com.github.choonchernlim.testoauth2google.security.GoogleAccessTokenConverter">
-                <property name="userTokenConverter">
-                    <bean class="com.github.choonchernlim.testoauth2google.security.DefaultUserAuthenticationConverter"/>
-                </property>
+                <property name="userTokenConverter" ref="userAuthenticationConverter"/>
             </bean>
         </property>
     </bean>

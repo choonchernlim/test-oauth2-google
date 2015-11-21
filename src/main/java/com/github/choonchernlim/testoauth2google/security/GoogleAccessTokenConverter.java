@@ -13,7 +13,6 @@
 package com.github.choonchernlim.testoauth2google.security;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -39,7 +38,7 @@ public class GoogleAccessTokenConverter extends DefaultAccessTokenConverter {
     private UserAuthenticationConverter userTokenConverter;
 
     public GoogleAccessTokenConverter() {
-        setUserTokenConverter(new DefaultUserAuthenticationConverter());
+        setUserTokenConverter(new CustomDefaultUserAuthenticationConverter());
     }
 
     /**
