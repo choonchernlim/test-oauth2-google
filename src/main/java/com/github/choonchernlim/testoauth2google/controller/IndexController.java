@@ -14,4 +14,9 @@ public final class IndexController {
         model.addAttribute("profile", authentication.getPrincipal());
         return "index";
     }
+
+    @RequestMapping(value = "/logout-success", method = RequestMethod.GET)
+    public String logoutSuccess() {
+        return "logout-success";
+    }
 }

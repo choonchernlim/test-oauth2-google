@@ -90,6 +90,10 @@
                 <th>hd</th>
                 <td>${profile.hd}</td>
             </tr>
+            <tr>
+                <th>Action</th>
+                <td><a href="${ROOT}/logout">log out</a></td>
+            </tr>
         </table>
 
 
