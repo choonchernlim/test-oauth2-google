@@ -47,5 +47,10 @@
         </constructor-arg>
     </bean>
 
+    <bean id="userAuthenticationConverter"
+          class="org.springframework.security.oauth2.provider.token.DefaultUserAuthenticationConverter">
+        <property name="userDetailsService" ref="googleUserDetailsService"/>
+    </bean>
+
 
 </beans>

@@ -12,6 +12,7 @@
  *******************************************************************************/
 package com.github.choonchernlim.testoauth2google.security;
 
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.security.core.AuthenticationException;
@@ -29,7 +31,6 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.RemoteTokenServices;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.DefaultResponseErrorHandler;
@@ -69,7 +70,7 @@ public class GoogleTokenServices extends RemoteTokenServices {
             @Override
             // Ignore 400
             public void handleError(ClientHttpResponse response) throws IOException {
-                if (response.getRawStatusCode() != 400) {
+                if (response.getStatusCode() != HttpStatus.BAD_REQUEST) {
                     super.handleError(response);
                 }
             }
@@ -80,87 +81,81 @@ public class GoogleTokenServices extends RemoteTokenServices {
     public OAuth2Authentication loadAuthentication(final String accessToken) throws AuthenticationException, InvalidTokenException {
         LOGGER.debug("BEFORE: Access token: {}", accessToken);
 
-        Map<String, Object> checkTokenResponse = checkToken(accessToken);
+        final Map<String, Object> checkTokenResponse = postForMap(accessToken);
 
-        if (checkTokenResponse.containsKey("error")) {
-            LOGGER.debug("check_token returned error: " + checkTokenResponse.get("error"));
-            throw new InvalidTokenException(accessToken);
-        }
+        final Map<String, Object> standardizedResponse = transformNonStandardValuesToStandardValues(checkTokenResponse);
 
-        transformNonStandardValuesToStandardValues(checkTokenResponse);
-
-        Assert.state(checkTokenResponse.containsKey("client_id"),
-                     "Client id must be present in response from auth server");
-        final OAuth2Authentication oAuth2Authentication = tokenConverter.extractAuthentication(checkTokenResponse);
+        final OAuth2Authentication oAuth2Authentication = tokenConverter.extractAuthentication(standardizedResponse);
 
         LOGGER.debug("AFTER: oAuth2Authentication: {}", oAuth2Authentication);
 
         return oAuth2Authentication;
     }
 
-    private Map<String, Object> checkToken(final String accessToken) {
-        LOGGER.debug("BEFORE: Access token: {}", accessToken);
-
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<String, String>();
-        formData.add("token", accessToken);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", getAuthorizationHeader(clientId, clientSecret));
-
-        final String accessTokenUrl = String.format(checkTokenEndpointUrl, accessToken);
-
-        LOGGER.debug("BEFORE: accessTokenUrl: {}", accessTokenUrl);
-
-        final Map<String, Object> stringObjectMap = postForMap(accessTokenUrl, formData, headers);
-
-        LOGGER.debug("AFTER: stringObjectMap: {}", stringObjectMap);
-
-        return stringObjectMap;
-    }
-
-    private void transformNonStandardValuesToStandardValues(final Map<String, Object> map) {
+    /**
+     * Use Spring Security constant fields defined at http://docs.spring.io/spring-security/oauth/apidocs/constant-values.html.
+     */
+    private Map<String, Object> transformNonStandardValuesToStandardValues(final Map<String, Object> map) {
         LOGGER.debug("BEFORE: Original map   : {}", map);
 
-        map.put("client_id", map.get("issued_to")); // Google sends 'client_id' as 'issued_to'
-        map.put("user_name", map.get("user_id")); // Google sends 'user_name' as 'user_id'
+        final Map<String, Object> transformedMap = ImmutableMap.<String, Object>builder()
+                .putAll(map)
+                .put("client_id", map.get("issued_to"))
+                .put("user_name", map.get("email"))
+                .build();
 
-        LOGGER.debug("AFTER: Transformed map : {}", map);
+        LOGGER.debug("AFTER: Transformed map : {}", transformedMap);
+
+        return transformedMap;
     }
 
     private String getAuthorizationHeader(final String clientId, final String clientSecret) {
         LOGGER.debug("clientId: {}", clientId);
         LOGGER.debug("clientSecret: {}", clientSecret);
 
-        String creds = String.format("%s:%s", clientId, clientSecret);
+        final String credential = String.format("%s:%s", clientId, clientSecret);
+
         try {
-            return "Basic " + new String(Base64.encode(creds.getBytes("UTF-8")));
+            return "Basic " + new String(Base64.encode(credential.getBytes("UTF-8")));
         }
         catch (UnsupportedEncodingException e) {
             throw new IllegalStateException("Could not convert String");
         }
     }
 
-    private Map<String, Object> postForMap(final String path,
-                                           final MultiValueMap<String, String> formData,
-                                           final HttpHeaders headers) {
-        LOGGER.debug("BEFORE: path: {}", path);
+    private Map<String, Object> postForMap(final String accessToken) {
+        LOGGER.debug("BEFORE: accessToken: {}", accessToken);
+
+        final String url = String.format(checkTokenEndpointUrl, accessToken);
+        LOGGER.debug("BEFORE: url: {}", url);
+
+        final MultiValueMap<String, String> formData = new LinkedMultiValueMap<String, String>();
+        formData.set("token", accessToken);
         LOGGER.debug("BEFORE: formData: {}", formData);
+
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.set("Authorization", getAuthorizationHeader(clientId, clientSecret));
         LOGGER.debug("BEFORE: headers: {}", headers);
 
-        if (headers.getContentType() == null) {
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        }
-        ParameterizedTypeReference<Map<String, Object>> map = new ParameterizedTypeReference<Map<String, Object>>() {
+        final ParameterizedTypeReference<Map<String, Object>> map = new ParameterizedTypeReference<Map<String, Object>>() {
         };
 
-        final Map<String, Object> body = restTemplate.exchange(path,
-                                                               HttpMethod.POST,
-                                                               new HttpEntity<MultiValueMap<String, String>>(formData,
-                                                                                                             headers),
-                                                               map).getBody();
+        final Map<String, Object> checkTokenEndpointResponse = ImmutableMap.copyOf(
+                restTemplate
+                        .exchange(url,
+                                  HttpMethod.POST,
+                                  new HttpEntity<MultiValueMap<String, String>>(formData, headers),
+                                  map)
+                        .getBody());
 
-        LOGGER.debug("AFTER: body: {}", body);
+        LOGGER.debug("AFTER: body: {} of type {}", checkTokenEndpointResponse, checkTokenEndpointResponse.getClass());
 
-        return body;
+        if (checkTokenEndpointResponse.containsKey("error")) {
+            LOGGER.debug("check_token returned error: " + checkTokenEndpointResponse.get("error"));
+            throw new InvalidTokenException(accessToken);
+        }
+
+        return checkTokenEndpointResponse;
     }
 }
