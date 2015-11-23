@@ -1,5 +1,7 @@
 # test-oauth2-google
 
+Steps to set up the app for the first time.
+
 * Go to [Google Developers Console](https://console.developers.google.com)
 
     * Go to **Credentials** page.
