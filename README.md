@@ -21,8 +21,8 @@
 
 * At this point, you should see the protected page displaying your Google profile.
 
-    ![Protected page](readme/protected-page2.png)
+    ![Protected page](readme/protected-page.png)
 
 * Clicking on "Log Out" will properly revoke your Google access token and log you out.
 
-    ![Goodbye page](readme/goodbye-page2.png)
+    ![Goodbye page](readme/goodbye-page.png)
