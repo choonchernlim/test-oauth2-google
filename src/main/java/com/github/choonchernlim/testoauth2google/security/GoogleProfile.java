@@ -22,7 +22,7 @@ public class GoogleProfile {
 
     // default constructor for Jackson to create JSON object
     @SuppressWarnings("unused")
-    public GoogleProfile() {
+    GoogleProfile() {
     }
 
     public GoogleProfile(GoogleProfile googleProfile) {

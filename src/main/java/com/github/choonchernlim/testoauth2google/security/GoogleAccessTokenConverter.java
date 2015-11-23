@@ -12,9 +12,9 @@
  *******************************************************************************/
 package com.github.choonchernlim.testoauth2google.security;
 
+import static com.github.choonchernlim.betterPreconditions.preconditions.PreconditionFactory.expect;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,70 +25,52 @@ import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConv
 import org.springframework.security.oauth2.provider.token.UserAuthenticationConverter;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Copied the DefaultAccessTokenConverter and modified for Google token details.
+ * Generates OAuth2Authentication.
  */
 @Service
 public class GoogleAccessTokenConverter extends DefaultAccessTokenConverter {
     private static Logger LOGGER = LoggerFactory.getLogger(GoogleAccessTokenConverter.class);
-    private final UserAuthenticationConverter userTokenConverter;
+    private final UserAuthenticationConverter userAuthenticationConverter;
 
     @Autowired
-    public GoogleAccessTokenConverter(final UserAuthenticationConverter userTokenConverter) {
-        this.userTokenConverter = userTokenConverter;
+    public GoogleAccessTokenConverter(final UserAuthenticationConverter userAuthenticationConverter) {
+        this.userAuthenticationConverter = userAuthenticationConverter;
     }
 
     @Override
-    public OAuth2Authentication extractAuthentication(final Map<String, ?> map) {
-        LOGGER.debug("BEFORE: Map: {}", map);
+    public OAuth2Authentication extractAuthentication(final Map<String, ?> responseMap) {
+        expect(responseMap, "responseMap").not().toBeNull().check();
 
-        final Set<String> scope = parseScopes(map);
+        final Authentication user = userAuthenticationConverter.extractAuthentication(responseMap);
 
-        final Authentication user = userTokenConverter.extractAuthentication(map);
+        final String clientId = (String) responseMap.get(CLIENT_ID);
 
-        final String clientId = (String) map.get(CLIENT_ID);
+        final Set<String> scopes = ImmutableSet.copyOf(((String) responseMap.get(SCOPE)).split("\\s"));
 
         final Map<String, String> parameters = ImmutableMap.of(CLIENT_ID, clientId);
 
-        final ImmutableSet<String> resourceIds = ImmutableSet.of((String) map.get(AUD));
+        final ImmutableSet<String> resourceIds = ImmutableSet.of((String) responseMap.get(AUD));
 
+        LOGGER.debug("BEFORE: map         : {}", responseMap);
         LOGGER.debug("BEFORE: parameters  : {}", parameters);
         LOGGER.debug("BEFORE: clientId    : {}", clientId);
-        LOGGER.debug("BEFORE: scope       : {}", scope);
+        LOGGER.debug("BEFORE: scopes      : {}", scopes);
         LOGGER.debug("BEFORE: resourceIds : {}", resourceIds);
 
         final OAuth2Request request = new OAuth2Request(parameters,
                                                         clientId,
                                                         null,
                                                         true,
-                                                        scope,
+                                                        scopes,
                                                         resourceIds,
                                                         null,
                                                         null,
                                                         null);
 
         return new OAuth2Authentication(request, user);
-    }
-
-    private Set<String> parseScopes(final Map<String, ?> map) {
-        // Parsing of scopes coming back from Google are slightly different from the default implementation
-        // Instead of it being a collection it is a String where multiple scopes are separated by a space.
-        Object scopeAsObject = map.containsKey(SCOPE) ? map.get(SCOPE) : EMPTY;
-        Set<String> scope = new LinkedHashSet<String>();
-        if (String.class.isAssignableFrom(scopeAsObject.getClass())) {
-            String scopeAsString = (String) scopeAsObject;
-            Collections.addAll(scope, scopeAsString.split(" "));
-        }
-        else if (Collection.class.isAssignableFrom(scopeAsObject.getClass())) {
-            Collection<String> scopes = (Collection<String>) scopeAsObject;
-            scope.addAll(scopes);
-        }
-        return scope;
     }
 }

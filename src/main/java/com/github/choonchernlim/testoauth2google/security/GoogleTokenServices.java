@@ -12,6 +12,7 @@
  *******************************************************************************/
 package com.github.choonchernlim.testoauth2google.security;
 
+import static com.github.choonchernlim.betterPreconditions.preconditions.PreconditionFactory.expect;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +77,8 @@ public class GoogleTokenServices extends RemoteTokenServices {
 
     @Override
     public OAuth2Authentication loadAuthentication(final String accessToken) throws AuthenticationException, InvalidTokenException {
+        expect(accessToken, "accessToken").not().toBeBlank().check();
+
         LOGGER.debug("BEFORE: Access token: {}", accessToken);
 
         final Map<String, String> checkTokenResponseMap = postForMap(accessToken);
@@ -97,6 +100,9 @@ public class GoogleTokenServices extends RemoteTokenServices {
      * @return Authorization header value
      */
     private String getAuthorizationHeaderValue(final String clientId, final String clientSecret) {
+        expect(clientId, "clientId").not().toBeBlank().check();
+        expect(clientSecret, "clientSecret").not().toBeBlank().check();
+
         final String credential = String.format("%s:%s", clientId, clientSecret);
 
         try {
@@ -114,6 +120,8 @@ public class GoogleTokenServices extends RemoteTokenServices {
      * @return Response map if valid, otherwise throw InvalidTokenException
      */
     private Map<String, String> postForMap(final String accessToken) {
+        expect(accessToken, "accessToken").not().toBeBlank().check();
+
         LOGGER.debug("BEFORE: accessToken: {}", accessToken);
 
         final String url = String.format(checkTokenEndpointUrl, accessToken);
@@ -155,6 +163,8 @@ public class GoogleTokenServices extends RemoteTokenServices {
      * @return Transformed response map
      */
     private Map<String, String> getStandardizedResponseMap(final Map<String, String> responseMap) {
+        expect(responseMap, "responseMap").not().toBeNull().check();
+
         LOGGER.debug("BEFORE: Original map   : {}", responseMap);
 
         final Map<String, String> transformedResponseMap = ImmutableMap.<String, String>builder()

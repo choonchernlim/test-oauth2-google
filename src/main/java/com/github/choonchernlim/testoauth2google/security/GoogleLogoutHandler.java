@@ -1,5 +1,6 @@
 package com.github.choonchernlim.testoauth2google.security;
 
+import static com.github.choonchernlim.betterPreconditions.preconditions.PreconditionFactory.expect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,10 @@ public class GoogleLogoutHandler implements LogoutHandler {
     public void logout(final HttpServletRequest request,
                        final HttpServletResponse response,
                        final Authentication authentication) {
+        expect(request, "request").not().toBeNull().check();
+        expect(response, "response").not().toBeNull().check();
+        expect(authentication, "authentication").not().toBeNull().check();
+
         final String url = String.format(logoutUrl, oAuth2RestTemplate.getAccessToken());
 
         LOGGER.debug("Revoking access token: {}", url);
