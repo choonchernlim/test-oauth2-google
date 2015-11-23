@@ -15,27 +15,6 @@
         <level value="debug"/>
     </logger>
 
-    <logger name="org.apache">
-        <level value="warn"/>
-    </logger>
-
-    <logger name="org.springframework">
-        <level value="warn"/>
-    </logger>
-
-    <logger name="org.hibernate">
-        <level value="warn"/>
-    </logger>
-
-    <!--Hibernate: Display JDBC parameters-->
-    <!--<logger name="org.hibernate.type.descriptor.sql">-->
-    <!--<level value="trace"/>-->
-    <!--</logger>-->
-
-    <logger name="org.eclipse.jetty">
-        <level value="info"/>
-    </logger>
-
     <root>
         <priority value="warn"/>
         <appender-ref ref="consoleAppender"/>

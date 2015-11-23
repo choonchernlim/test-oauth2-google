@@ -5,7 +5,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
 
     <security:http pattern="/resources/**" security="none"/>
-    <security:http pattern="/logout-success" security="none"/>
+    <security:http pattern="/goodbye" security="none"/>
 
     <security:http use-expressions="true" entry-point-ref="clientAuthenticationEntryPoint">
         <security:http-basic/>
@@ -38,7 +38,7 @@
     Revoke access token by making a call to Google, then invalidate session and clear authentication.
     -->
     <bean id="logoutFilter" class="org.springframework.security.web.authentication.logout.LogoutFilter">
-        <constructor-arg name="logoutSuccessUrl" value="/logout-success"/>
+        <constructor-arg name="logoutSuccessUrl" value="/goodbye"/>
         <constructor-arg name="handlers">
             <list>
                 <ref bean="googleLogoutHandler"/>
@@ -47,6 +47,9 @@
         </constructor-arg>
     </bean>
 
+    <!--
+    Wiring Google user details service to populate user profile from Google and authorities from DB (currently hardcoded).
+    -->
     <bean id="userAuthenticationConverter"
           class="org.springframework.security.oauth2.provider.token.DefaultUserAuthenticationConverter">
         <property name="userDetailsService" ref="googleUserDetailsService"/>

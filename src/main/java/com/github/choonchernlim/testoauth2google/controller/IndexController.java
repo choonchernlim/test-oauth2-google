@@ -15,8 +15,8 @@ public final class IndexController {
         return "index";
     }
 
-    @RequestMapping(value = "/logout-success", method = RequestMethod.GET)
-    public String logoutSuccess() {
-        return "logout-success";
+    @RequestMapping(value = "/goodbye", method = RequestMethod.GET)
+    public String goodbye() {
+        return "goodbye";
     }
 }

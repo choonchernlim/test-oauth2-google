@@ -34,7 +34,7 @@
 
         <div id="header-navbar-collapse" class="collapse navbar-collapse">
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="${ROOT}/logout">Log Out</a></li>
+                <li><a href="${ROOT}">Log In</a></li>
             </ul>
         </div>
     </div>
@@ -44,58 +44,13 @@
     <div class="row">
         <br/><br/>
         <div class="page-header">
-            <h2>Welcome ${profile.givenName}!</h2>
+            <h2>You have successfully logged out!</h2>
         </div>
 
-        <table width="600px">
-            <tr>
-                <th width="20%">ID</th>
-                <td width="80%">${profile.id}</td>
-            </tr>
-            <tr>
-                <th>Email</th>
-                <td>${profile.email}</td>
-            </tr>
-            <tr>
-                <th>Verified Email</th>
-                <td>${profile.verifiedEmail}</td>
-            </tr>
-            <tr>
-                <th>Name</th>
-                <td>${profile.name}</td>
-            </tr>
-            <tr>
-                <th>Given Name</th>
-                <td>${profile.givenName}</td>
-            </tr>
-            <tr>
-                <th>Family Name</th>
-                <td>${profile.familyName}</td>
-            </tr>
-            <tr>
-                <th>Link</th>
-                <td><a href="${profile.link}">${profile.link}</a></td>
-            </tr>
-            <tr>
-                <th>Picture</th>
-                <td><img src="${profile.picture}"></td>
-            </tr>
-            <tr>
-                <th>Gender</th>
-                <td>${profile.gender}</td>
-            </tr>
-            <tr>
-                <th>Locale</th>
-                <td>${profile.locale}</td>
-            </tr>
-            <tr>
-                <th>Hosted Domain</th>
-                <td>${profile.hd}</td>
-            </tr>
-        </table>
+        <p class="lead">Your Google access token is revoked, session is invalidated and authentication object is
+            cleared.</p>
     </div>
 </div>
-
 
 </body>
 </html>

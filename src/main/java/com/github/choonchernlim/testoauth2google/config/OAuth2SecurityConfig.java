@@ -22,7 +22,7 @@ import javax.annotation.Resource;
 @Configuration
 @EnableOAuth2Client
 @PropertySource("classpath:messages.properties")
-class OAuth2SecurityConfiguration {
+class OAuth2SecurityConfig {
     @Autowired
     private Environment env;
 
