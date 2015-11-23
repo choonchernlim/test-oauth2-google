@@ -8,11 +8,10 @@
 
 * Add client ID and client secret under `src/main/resources/messages.properties`.
 
-
-
-    google.client.id=[CLIENT-ID]
-    google.client.secret==[CLIENT-SECRET]
-
+```
+google.client.id=[CLIENT-ID]
+google.client.secret==[CLIENT-SECRET]
+```
 
 * Run `mvn clean jetty:run`.
 
