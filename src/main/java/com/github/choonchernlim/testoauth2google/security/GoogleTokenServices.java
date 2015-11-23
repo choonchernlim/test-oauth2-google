@@ -34,7 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.DefaultResponseErrorHandler;
-import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -42,18 +41,16 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 /**
- * Copied the RemoteTokenServices and modified for Google token details.
+ * Performs a POST on check token endpoint URL.
  */
 @Service
 public class GoogleTokenServices extends RemoteTokenServices {
-
     private static Logger LOGGER = LoggerFactory.getLogger(GoogleTokenServices.class);
 
     private final String checkTokenEndpointUrl;
-    private final String clientId;
-    private final String clientSecret;
     private final AccessTokenConverter tokenConverter;
-    private final RestOperations restTemplate;
+    private final RestTemplate restTemplate;
+    private final String authorizationHeaderValue;
 
     @Autowired
     public GoogleTokenServices(@Value("${google.check.token.endpoint.url}") final String checkTokenEndpointUrl,
@@ -61,14 +58,14 @@ public class GoogleTokenServices extends RemoteTokenServices {
                                @Value("${google.client.secret}") final String clientSecret,
                                final AccessTokenConverter tokenConverter) {
         this.checkTokenEndpointUrl = checkTokenEndpointUrl;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
         this.tokenConverter = tokenConverter;
+        this.authorizationHeaderValue = getAuthorizationHeaderValue(clientId, clientSecret);
 
         this.restTemplate = new RestTemplate();
-        ((RestTemplate) restTemplate).setErrorHandler(new DefaultResponseErrorHandler() {
+
+        // if token is invalid, it will come back as BAD REQUEST
+        this.restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
             @Override
-            // Ignore 400
             public void handleError(ClientHttpResponse response) throws IOException {
                 if (response.getStatusCode() != HttpStatus.BAD_REQUEST) {
                     super.handleError(response);
@@ -81,11 +78,11 @@ public class GoogleTokenServices extends RemoteTokenServices {
     public OAuth2Authentication loadAuthentication(final String accessToken) throws AuthenticationException, InvalidTokenException {
         LOGGER.debug("BEFORE: Access token: {}", accessToken);
 
-        final Map<String, Object> checkTokenResponse = postForMap(accessToken);
+        final Map<String, String> checkTokenResponseMap = postForMap(accessToken);
 
-        final Map<String, Object> standardizedResponse = transformNonStandardValuesToStandardValues(checkTokenResponse);
+        final Map<String, String> standardizedResponseMap = getStandardizedResponseMap(checkTokenResponseMap);
 
-        final OAuth2Authentication oAuth2Authentication = tokenConverter.extractAuthentication(standardizedResponse);
+        final OAuth2Authentication oAuth2Authentication = tokenConverter.extractAuthentication(standardizedResponseMap);
 
         LOGGER.debug("AFTER: oAuth2Authentication: {}", oAuth2Authentication);
 
@@ -93,26 +90,13 @@ public class GoogleTokenServices extends RemoteTokenServices {
     }
 
     /**
-     * Use Spring Security constant fields defined at http://docs.spring.io/spring-security/oauth/apidocs/constant-values.html.
+     * Returns authorization header value.
+     *
+     * @param clientId     Client ID
+     * @param clientSecret Client secret
+     * @return Authorization header value
      */
-    private Map<String, Object> transformNonStandardValuesToStandardValues(final Map<String, Object> map) {
-        LOGGER.debug("BEFORE: Original map   : {}", map);
-
-        final Map<String, Object> transformedMap = ImmutableMap.<String, Object>builder()
-                .putAll(map)
-                .put("client_id", map.get("issued_to"))
-                .put("user_name", map.get("email"))
-                .build();
-
-        LOGGER.debug("AFTER: Transformed map : {}", transformedMap);
-
-        return transformedMap;
-    }
-
-    private String getAuthorizationHeader(final String clientId, final String clientSecret) {
-        LOGGER.debug("clientId: {}", clientId);
-        LOGGER.debug("clientSecret: {}", clientSecret);
-
+    private String getAuthorizationHeaderValue(final String clientId, final String clientSecret) {
         final String credential = String.format("%s:%s", clientId, clientSecret);
 
         try {
@@ -123,7 +107,13 @@ public class GoogleTokenServices extends RemoteTokenServices {
         }
     }
 
-    private Map<String, Object> postForMap(final String accessToken) {
+    /**
+     * Posts against check token endpoint URL and returns the response map.
+     *
+     * @param accessToken Access token
+     * @return Response map if valid, otherwise throw InvalidTokenException
+     */
+    private Map<String, String> postForMap(final String accessToken) {
         LOGGER.debug("BEFORE: accessToken: {}", accessToken);
 
         final String url = String.format(checkTokenEndpointUrl, accessToken);
@@ -135,13 +125,13 @@ public class GoogleTokenServices extends RemoteTokenServices {
 
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.set("Authorization", getAuthorizationHeader(clientId, clientSecret));
+        headers.set("Authorization", authorizationHeaderValue);
         LOGGER.debug("BEFORE: headers: {}", headers);
 
-        final ParameterizedTypeReference<Map<String, Object>> map = new ParameterizedTypeReference<Map<String, Object>>() {
+        final ParameterizedTypeReference<Map<String, String>> map = new ParameterizedTypeReference<Map<String, String>>() {
         };
 
-        final Map<String, Object> checkTokenEndpointResponse = ImmutableMap.copyOf(
+        final Map<String, String> checkTokenEndpointResponse = ImmutableMap.copyOf(
                 restTemplate
                         .exchange(url,
                                   HttpMethod.POST,
@@ -149,13 +139,32 @@ public class GoogleTokenServices extends RemoteTokenServices {
                                   map)
                         .getBody());
 
-        LOGGER.debug("AFTER: body: {} of type {}", checkTokenEndpointResponse, checkTokenEndpointResponse.getClass());
+        LOGGER.debug("AFTER: checkTokenEndpointResponse: {}", checkTokenEndpointResponse);
 
         if (checkTokenEndpointResponse.containsKey("error")) {
-            LOGGER.debug("check_token returned error: " + checkTokenEndpointResponse.get("error"));
-            throw new InvalidTokenException(accessToken);
+            throw new InvalidTokenException(checkTokenEndpointResponse.get("error"));
         }
 
         return checkTokenEndpointResponse;
+    }
+
+    /**
+     * Use Spring Security constant fields defined at http://docs.spring.io/spring-security/oauth/apidocs/constant-values.html.
+     *
+     * @param responseMap Response map
+     * @return Transformed response map
+     */
+    private Map<String, String> getStandardizedResponseMap(final Map<String, String> responseMap) {
+        LOGGER.debug("BEFORE: Original map   : {}", responseMap);
+
+        final Map<String, String> transformedResponseMap = ImmutableMap.<String, String>builder()
+                .putAll(responseMap)
+                .put("client_id", responseMap.get("audience"))
+                .put("user_name", responseMap.get("email"))
+                .build();
+
+        LOGGER.debug("AFTER: Transformed map : {}", transformedResponseMap);
+
+        return transformedResponseMap;
     }
 }

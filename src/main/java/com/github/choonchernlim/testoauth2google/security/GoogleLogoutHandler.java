@@ -24,10 +24,10 @@ public class GoogleLogoutHandler implements LogoutHandler {
     private final String logoutUrl;
 
     @Autowired
-    public GoogleLogoutHandler(final OAuth2RestOperations oAuth2RestTemplate,
-                               @Value("${google.logout.url}") final String logoutUrl) {
-        this.oAuth2RestTemplate = oAuth2RestTemplate;
+    public GoogleLogoutHandler(@Value("${google.logout.url}") final String logoutUrl,
+                               final OAuth2RestOperations oAuth2RestTemplate) {
         this.logoutUrl = logoutUrl;
+        this.oAuth2RestTemplate = oAuth2RestTemplate;
     }
 
     @Override
