@@ -78,7 +78,7 @@ public class GoogleTokenServices extends RemoteTokenServices {
 
     @Override
     public OAuth2Authentication loadAuthentication(final String accessToken) throws AuthenticationException, InvalidTokenException {
-        LOGGER.debug("Access token: {}", accessToken);
+        LOGGER.debug("BEFORE: Access token: {}", accessToken);
 
         Map<String, Object> checkTokenResponse = checkToken(accessToken);
 
@@ -91,25 +91,40 @@ public class GoogleTokenServices extends RemoteTokenServices {
 
         Assert.state(checkTokenResponse.containsKey("client_id"),
                      "Client id must be present in response from auth server");
-        return tokenConverter.extractAuthentication(checkTokenResponse);
+        final OAuth2Authentication oAuth2Authentication = tokenConverter.extractAuthentication(checkTokenResponse);
+
+        LOGGER.debug("AFTER: oAuth2Authentication: {}", oAuth2Authentication);
+
+        return oAuth2Authentication;
     }
 
     private Map<String, Object> checkToken(final String accessToken) {
-        LOGGER.debug("Access token: {}", accessToken);
+        LOGGER.debug("BEFORE: Access token: {}", accessToken);
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<String, String>();
         formData.add("token", accessToken);
+
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", getAuthorizationHeader(clientId, clientSecret));
-        String accessTokenUrl = checkTokenEndpointUrl + "?access_token=" + accessToken;
-        return postForMap(accessTokenUrl, formData, headers);
+
+        final String accessTokenUrl = String.format(checkTokenEndpointUrl, accessToken);
+
+        LOGGER.debug("BEFORE: accessTokenUrl: {}", accessTokenUrl);
+
+        final Map<String, Object> stringObjectMap = postForMap(accessTokenUrl, formData, headers);
+
+        LOGGER.debug("AFTER: stringObjectMap: {}", stringObjectMap);
+
+        return stringObjectMap;
     }
 
     private void transformNonStandardValuesToStandardValues(final Map<String, Object> map) {
-        LOGGER.debug("Original map = " + map);
+        LOGGER.debug("BEFORE: Original map   : {}", map);
+
         map.put("client_id", map.get("issued_to")); // Google sends 'client_id' as 'issued_to'
         map.put("user_name", map.get("user_id")); // Google sends 'user_name' as 'user_id'
-        LOGGER.debug("Transformed = " + map);
+
+        LOGGER.debug("AFTER: Transformed map : {}", map);
     }
 
     private String getAuthorizationHeader(final String clientId, final String clientSecret) {
@@ -128,9 +143,9 @@ public class GoogleTokenServices extends RemoteTokenServices {
     private Map<String, Object> postForMap(final String path,
                                            final MultiValueMap<String, String> formData,
                                            final HttpHeaders headers) {
-        LOGGER.debug("path: {}", path);
-        LOGGER.debug("formData: {}", formData);
-        LOGGER.debug("headers: {}", headers);
+        LOGGER.debug("BEFORE: path: {}", path);
+        LOGGER.debug("BEFORE: formData: {}", formData);
+        LOGGER.debug("BEFORE: headers: {}", headers);
 
         if (headers.getContentType() == null) {
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -138,9 +153,14 @@ public class GoogleTokenServices extends RemoteTokenServices {
         ParameterizedTypeReference<Map<String, Object>> map = new ParameterizedTypeReference<Map<String, Object>>() {
         };
 
-        return restTemplate.exchange(path,
-                                     HttpMethod.POST,
-                                     new HttpEntity<MultiValueMap<String, String>>(formData, headers),
-                                     map).getBody();
+        final Map<String, Object> body = restTemplate.exchange(path,
+                                                               HttpMethod.POST,
+                                                               new HttpEntity<MultiValueMap<String, String>>(formData,
+                                                                                                             headers),
+                                                               map).getBody();
+
+        LOGGER.debug("AFTER: body: {}", body);
+
+        return body;
     }
 }
