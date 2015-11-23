@@ -6,11 +6,12 @@
     * Select "Add credentials" drop down list, then "OAuth 2.0 client ID".
     * Set "Authorized redirect URIs" to `http://localhost:7777/test-oauth2-google/login` 
 
-* Add client ID and client secret under `src/main/resources/messages.properties`:-
+* Add client ID and client secret under `src/main/resources/messages.properties`.
 
 
-    google.client.id=
-    google.client.secret=
+
+    google.client.id=[CLIENT-ID]
+    google.client.secret==[CLIENT-SECRET]
 
 
 * Run `mvn clean jetty:run`.
