@@ -12,6 +12,8 @@
  *******************************************************************************/
 package com.github.choonchernlim.testoauth2google.security;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +27,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -43,26 +44,35 @@ public class GoogleAccessTokenConverter extends DefaultAccessTokenConverter {
         this.userTokenConverter = userTokenConverter;
     }
 
+    @Override
     public OAuth2Authentication extractAuthentication(final Map<String, ?> map) {
-        LOGGER.debug("Map: {}", map);
+        LOGGER.debug("BEFORE: Map: {}", map);
 
-        Map<String, String> parameters = new HashMap<String, String>();
-        Set<String> scope = parseScopes(map);
-        Authentication user = userTokenConverter.extractAuthentication(map);
-        String clientId = (String) map.get(CLIENT_ID);
-        parameters.put(CLIENT_ID, clientId);
-        Set<String> resourceIds = new LinkedHashSet<String>(map.containsKey(AUD) ?
-                                                                    (Collection<String>) map.get(AUD) :
-                                                                    Collections.<String>emptySet());
-        OAuth2Request request = new OAuth2Request(parameters,
-                                                  clientId,
-                                                  null,
-                                                  true,
-                                                  scope,
-                                                  resourceIds,
-                                                  null,
-                                                  null,
-                                                  null);
+        final Set<String> scope = parseScopes(map);
+
+        final Authentication user = userTokenConverter.extractAuthentication(map);
+
+        final String clientId = (String) map.get(CLIENT_ID);
+
+        final Map<String, String> parameters = ImmutableMap.of(CLIENT_ID, clientId);
+
+        final ImmutableSet<String> resourceIds = ImmutableSet.of((String) map.get(AUD));
+
+        LOGGER.debug("BEFORE: parameters  : {}", parameters);
+        LOGGER.debug("BEFORE: clientId    : {}", clientId);
+        LOGGER.debug("BEFORE: scope       : {}", scope);
+        LOGGER.debug("BEFORE: resourceIds : {}", resourceIds);
+
+        final OAuth2Request request = new OAuth2Request(parameters,
+                                                        clientId,
+                                                        null,
+                                                        true,
+                                                        scope,
+                                                        resourceIds,
+                                                        null,
+                                                        null,
+                                                        null);
+
         return new OAuth2Authentication(request, user);
     }
 

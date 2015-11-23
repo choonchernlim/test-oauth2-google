@@ -159,8 +159,9 @@ public class GoogleTokenServices extends RemoteTokenServices {
 
         final Map<String, String> transformedResponseMap = ImmutableMap.<String, String>builder()
                 .putAll(responseMap)
-                .put("client_id", responseMap.get("audience"))
+                .put("client_id", responseMap.get("issued_to"))
                 .put("user_name", responseMap.get("email"))
+                .put("aud", responseMap.get("audience"))
                 .build();
 
         LOGGER.debug("AFTER: Transformed map : {}", transformedResponseMap);
